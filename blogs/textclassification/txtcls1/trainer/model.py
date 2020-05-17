@@ -32,18 +32,18 @@ tf.logging.set_verbosity(tf.logging.INFO)
 # variables set by init()
 BUCKET = None
 TRAIN_STEPS = 1000
-WORD_VOCAB_FILE = None 
+WORD_VOCAB_FILE = None
 N_WORDS = -1
 
 # hardcoded into graph
 BATCH_SIZE = 32
 
 # describe your data
-TARGETS = ['nytimes', 'github', 'techcrunch']
-MAX_DOCUMENT_LENGTH = 20
-CSV_COLUMNS = ['source', 'title']
-LABEL_COLUMN = 'source'
-DEFAULTS = [['null'], ['null']]
+TARGETS = ['1', '2']
+MAX_DOCUMENT_LENGTH = 583
+CSV_COLUMNS = ['Age', 'General', 'Total_Bilirubin', 'Direct_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Aspartate_Aminotransferase', 'Total_Protiens', 'Albumin,Albumin_and_Globulin_Ratio', 'Dataset']
+LABEL_COLUMN = 'Dataset'
+DEFAULTS = [['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null']]
 PADWORD = 'ZYXW'
 
 def init(bucket, num_steps):
@@ -51,18 +51,18 @@ def init(bucket, num_steps):
   BUCKET = bucket
   TRAIN_STEPS = num_steps
   WORD_VOCAB_FILE = 'gs://{}/txtcls1/vocab_words'.format(BUCKET)
-  N_WORDS = save_vocab('gs://{}/txtcls1/train.csv'.format(BUCKET), 'title', WORD_VOCAB_FILE);
+  N_WORDS = save_vocab('gs://{}/txtcls1/trainer/indian_liver_patient.csv'.format(BUCKET), 'General', WORD_VOCAB_FILE);
 
 def save_vocab(trainfile, txtcolname, outfilename):
   if trainfile.startswith('gs://'):
     import subprocess
-    tmpfile = "vocab.csv"
+    tmpfile = "indian_liver_patient.csv"
     subprocess.check_call("gsutil cp {} {}".format(trainfile, tmpfile).split(" "))
     filename = tmpfile
   else:
     filename = trainfile
   import pandas as pd
-  df = pd.read_csv(filename, header=None, sep='\t', names=['source', 'title'])
+  df = pd.read_csv(filename, header=None, sep='\t', names=['Age', 'General', 'Total_Bilirubin', 'Direct_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Aspartate_Aminotransferase', 'Total_Protiens', 'Albumin,Albumin_and_Globulin_Ratio', 'Dataset'])
   # the text to be classified
   vocab_processor = tflearn.preprocessing.VocabularyProcessor(MAX_DOCUMENT_LENGTH, min_frequency=10)
   vocab_processor.fit(df[txtcolname])
@@ -82,13 +82,13 @@ def read_dataset(prefix):
     mode = tf.contrib.learn.ModeKeys.TRAIN
   else:
     mode = tf.contrib.learn.ModeKeys.EVAL
-   
+
   # the actual input function passed to TensorFlow
   def _input_fn():
     # could be a path to one file or a file pattern.
     input_file_names = tf.train.match_filenames_once(filename)
     filename_queue = tf.train.string_input_producer(input_file_names, shuffle=True)
- 
+
     # read CSV
     reader = tf.TextLineReader()
     _, value = reader.read_up_to(filename_queue, num_records=BATCH_SIZE)
@@ -104,7 +104,7 @@ def read_dataset(prefix):
     target = table.lookup(label)
 
     return features, target
-  
+
   return _input_fn
 
 # CNN model parameters
@@ -113,9 +113,9 @@ WINDOW_SIZE = EMBEDDING_SIZE
 STRIDE = int(WINDOW_SIZE/2)
 def cnn_model(features, target, mode):
     table = lookup.index_table_from_file(vocabulary_file=WORD_VOCAB_FILE, num_oov_buckets=1, default_value=-1)
-    
+
     # string operations
-    titles = tf.squeeze(features['title'], [1])
+    titles = tf.squeeze(features['General'], [1])
     words = tf.string_split(titles)
     densewords = tf.sparse_tensor_to_dense(words, default_value=PADWORD)
     numbers = table.lookup(densewords)
@@ -127,7 +127,7 @@ def cnn_model(features, target, mode):
     # layer to take the words and convert them into vectors (embeddings)
     embeds = tf.contrib.layers.embed_sequence(sliced, vocab_size=N_WORDS, embed_dim=EMBEDDING_SIZE)
     print('words_embed={}'.format(embeds)) # (?, 20, 10)
-    
+
     # now do convolution
     conv = tf.contrib.layers.conv2d(embeds, 1, WINDOW_SIZE, stride=STRIDE, padding='SAME') # (?, 4, 1)
     conv = tf.nn.relu(conv) # (?, 4, 1)
@@ -164,7 +164,7 @@ def cnn_model(features, target, mode):
 
 def serving_input_fn():
     feature_placeholders = {
-      'title': tf.placeholder(tf.string, [None]),
+      'General': tf.placeholder(tf.string, [None]),
     }
     features = {
       key: tf.expand_dims(tensor, -1)
@@ -200,4 +200,3 @@ def experiment_fn(output_dir):
         )],
         train_steps = TRAIN_STEPS
     )
-

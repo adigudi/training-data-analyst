@@ -27,7 +27,7 @@ import tensorflow.contrib.metrics as metrics
 from tensorflow.python.platform import gfile
 from tensorflow.contrib import lookup
 
-tf.logging.set_verbosity(tf.logging.INFO)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
 
 # variables set by init()
 BUCKET = None

@@ -40,7 +40,7 @@ BATCH_SIZE = 32
 
 # describe your data
 TARGETS = ['1', '2']
-MAX_DOCUMENT_LENGTH = 583
+MAX_DOCUMENT_LENGTH = 58
 CSV_COLUMNS = ['Age', 'General', 'Total_Bilirubin', 'Direct_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Aspartate_Aminotransferase', 'Total_Protiens', 'Albumin,Albumin_and_Globulin_Ratio', 'Dataset']
 LABEL_COLUMN = 'Dataset'
 DEFAULTS = [['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null', 'null']]
